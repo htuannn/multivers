@@ -124,7 +124,7 @@ class MultiVerSModel(pl.LightningModule):
         gradient_checkpointing: Whether to use gradient checkpointing with Longformer.
         """
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument("--encoder_name", type=str, default="allenai/longformer-base-4096")
+        parser.add_argument("--encoder_name", type=str, default="bluenguyen/longformer-phobert-base-4096")
         parser.add_argument("--label_weight", type=float, default=1.0)
         parser.add_argument("--rationale_weight", type=float, default=15.0)
         parser.add_argument("--num_labels", type=int, default=3)

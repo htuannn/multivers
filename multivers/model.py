@@ -144,13 +144,13 @@ class MultiVerSModel(pl.LightningModule):
     @staticmethod
     def _get_encoder(hparams):
         "Start from the Longformer science checkpoint."
-        starting_encoder_name = "allenai/longformer-large-4096"
+        starting_encoder_name = "bluenguyen/longformer-phobert-base-4096"
         encoder = LongformerModel.from_pretrained(
             starting_encoder_name,
             gradient_checkpointing=hparams.gradient_checkpointing)
 
         orig_state_dict = encoder.state_dict()
-        checkpoint_prefixed = torch.load(util.get_longformer_science_checkpoint())
+        checkpoint_prefixed = util.get_longformer_phobert_checkpoint()
 
         # New checkpoint
         new_state_dict = {}
@@ -163,9 +163,8 @@ class MultiVerSModel(pl.LightningModule):
             new_key = k[8:]
             new_state_dict[new_key] = v
 
-        # Add items from Huggingface state_dict. These are never used, but
-        # they're needed to make things line up
-        ADD_TO_CHECKPOINT = ["embeddings.position_ids"]
+        # Not loaded statedict
+        ADD_TO_CHECKPOINT = ["pooler.dense.weight", "pooler.dense.bias"]
         for name in ADD_TO_CHECKPOINT:
             new_state_dict[name] = orig_state_dict[name]
 

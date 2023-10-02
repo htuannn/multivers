@@ -31,7 +31,7 @@ def convertfile(data, output):
 
             sentences = v['context'].replace('...', '$$').strip()
             token = [x.strip() for x in sentences.split('.')]
-            sentences = [sentence.replace('$$', '...') for sentence in token]
+            sentences = [sentence.replace('$$', '...')+" ." for sentence in token]
 
             evidence_sets = [find_index_evidence(v['context'], v['evidence'])]
             

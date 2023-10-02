@@ -69,13 +69,13 @@ def write_jsonl(data, fname):
 
 
 def get_longformer_phobert_checkpoint():
-    """https://huggingface.co/bluenguyen/longformer-phobert-base-4096?fbclid=IwAR3ikj_MPxxJPY-Pb261_1J-sG5zTshZkUoNdkxsE2fXClza0M6nn_K7JYI&text=t%C3%B4i+l%C3%A0+%3Cmask%3E"
+    "https://huggingface.co/bluenguyen/longformer-phobert-base-4096?fbclid=IwAR3ikj_MPxxJPY-Pb261_1J-sG5zTshZkUoNdkxsE2fXClza0M6nn_K7JYI&text=t%C3%B4i+l%C3%A0+%3Cmask%3E"
     
     loaded_model = RobertaLongForMaskedLM.from_pretrained("bluenguyen/longformer-phobert-base-4096")
     checkpoint_model = loaded_model.state_dict()
     return checkpoint_model
     
-def get_longformer_science_checkpoint():
+'''def get_longformer_science_checkpoint():
     current_dir = pathlib.Path(os.path.realpath(__file__)).parent
     fname = current_dir.parent / "checkpoints/longformer_large_science.ckpt"
 
@@ -126,4 +126,4 @@ def flatten(z):
 
 
 def list_to_dict(xs, keyname):
-    return {x[keyname]: x for x in xs}
+    return {x[keyname]: x for x in xs} '''

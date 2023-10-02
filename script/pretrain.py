@@ -85,7 +85,7 @@ def main():
         "--val_check_interval",
         "0.1",
         "--encoder_name",
-        "longformer-large-science",
+        "bluenguyen/longformer-phobert-base-4096",
         "--monitor",
         "valid_abstract_rationalized_f1"
     ]

@@ -13,10 +13,10 @@ def find_index_evidence(sentences, evidence):
             if evidence_end == '.':
                 tk_temp = tk + '.'
                 if tk_temp == evidence:
-                    return token.index(tk)
+                    return [token.index(tk)]
             else :
                 if tk == evidence:
-                    return token.index(tk)
+                    return [token.index(tk)]
     else : 
         return None
 
@@ -27,11 +27,14 @@ def convertfile(data, output):
             id = k
             claim = v['claim']
             label = v['verdict']
-            sentences = v['context']
+
+            sentences = v['context'].replace('...', '$$')
+            token = [x.strip() for x in sentences.split('.')]
+            sentences = [sentence.replace('$$', '...') for sentence in token]
+
+            evidence_sets = [find_index_evidence(v['context'], v['evidence'])]
             
-            evidence_sets = [find_index_evidence(sentences, v['evidence'])]
-            
-            if find_index_evidence(sentences, v['evidence']) == None:
+            if find_index_evidence(v['context'], v['evidence']) == None:
                 evidence_sets = []
             negative_sample_id = None
             abstract_id = -1
@@ -51,7 +54,7 @@ def load_json(path_file):
     return json.load(open(path_file, "r", encoding="utf-8"))
 
 if __name__ == '__main__':
-    data = load_json('ise-dsc01-warmup_update.json')
+    data = load_json('ise-dsc01-warmup.json')
     key_id = data.keys()
     
     train_size = 0.9

@@ -4,7 +4,7 @@ import random
 
 
 def find_index_evidence(sentences, evidence):
-    sentences = sentences.replace('...', '$$')
+    sentences = sentences.replace('...', '$$').strip()
     token = [x.strip() for x in sentences.split('.')]
     sentences = [sentence.replace('$$', '...') for sentence in token]
     if evidence != None:
@@ -21,14 +21,15 @@ def find_index_evidence(sentences, evidence):
         return None
 
 def convertfile(data, output):
+    label_lookup = {"REFUTED": "REFUTES", "SUPPORTED": "SUPPORTS", "NEI": "NOT ENOUGH INFO"}
     with open(output, 'w', encoding = 'utf-8') as f:
         for i in data:
             k,v = list(i.items())[0]
             id = k
             claim = v['claim']
-            label = v['verdict']
+            label = label_lookup[v['verdict']]
 
-            sentences = v['context'].replace('...', '$$')
+            sentences = v['context'].replace('...', '$$').strip()
             token = [x.strip() for x in sentences.split('.')]
             sentences = [sentence.replace('$$', '...') for sentence in token]
 
@@ -36,10 +37,10 @@ def convertfile(data, output):
             
             if find_index_evidence(v['context'], v['evidence']) == None:
                 evidence_sets = []
-            negative_sample_id = None
+            negative_sample_id = -1
             abstract_id = -1
             data_dict = {
-                'id': id,
+                'id': int(id),
                 'claim': claim,
                 'label': label,
                 'sentences': sentences,

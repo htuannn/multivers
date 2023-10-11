@@ -3,7 +3,7 @@ Module to handle training data.
 
 If you're just doing inference, look at `data.py` instead of this file.
 """
-
+from underthesea import word_tokenize
 import os
 import pathlib
 import torch
@@ -193,10 +193,12 @@ class SciFactDataset(Dataset):
         }
 
     def _tokenize_longformer(self, claim, sentences, title):
+        claim =  word_tokenize(claim, format="text")
+        sentences = [word_tokenize(sent, format="text") for sent in sentences]
         cited_text = self.tokenizer.eos_token.join(sentences)
         if title is not None:
             cited_text = title + self.tokenizer.eos_token + cited_text
-        tokenized = self.tokenizer(claim + self.tokenizer.eos_token + cited_text)
+        tokenized = self.tokenizer(claim + self.tokenizer.eos_token + cited_text, truncation=True, max_length=4096)
         tokenized["global_attention_mask"] = self._get_global_attention_mask(tokenized)
         abstract_sent_idx = self._get_abstract_sent_tokens(tokenized, title)
 
@@ -216,7 +218,7 @@ class SciFactDataset(Dataset):
                 for word in sent
             ]
             return res
-
+        
         # Claim and title aren't truncated.
         if title is not None:
             claim_and_title = claim + self.tokenizer.eos_token + title

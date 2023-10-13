@@ -8,9 +8,12 @@ import pandas as pd
 
 def find_index_evidence(sentences, evidence):
     sentences = sentences.replace('...', '$$').strip()
-    sentences = re.sub(r'(\d)\.(\d)', r'\1,\2', sentences)
+    
+    sentences = re.sub(r'(\d)\.(\d)', r'\1\2', sentences)
     token = [x.strip() for x in sentences.split('.')]
     sentences = [sentence.replace('$$', '...') for sentence in token]
+
+    evidence  = re.sub(r'(\d)\.(\d)', r'\1\2', evidence)
     if evidence != None:
         evidence_end = evidence[-1]
         for tk in token:
@@ -32,9 +35,11 @@ def convertfile(data, output):
             id = v['id']
 
             claim = v['claim']
+            claim = re.sub(r'(\d)\.(\d)', r'\1\2', claim)
             label = label_lookup[v['verdict']]
 
             sentences = v['context'].replace('...', '$$').strip()
+            sentences = re.sub(r'(\d)\.(\d)', r'\1\2', sentences)
             token = [x.strip() for x in sentences.split('.')]
             sentences = [sentence.replace('$$', '...')+" ." for sentence in token]
 

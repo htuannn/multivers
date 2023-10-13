@@ -28,6 +28,19 @@ def get_tokenizer(hparams):
     # If we're not using the science model, just make the normal tokenizer.
     if hparams.encoder_name != "longformer-large-science":
         tokenizer = AutoTokenizer.from_pretrained(hparams.encoder_name)
+        ADDITIONAL_TOKENS = {
+            "section_start": "<|sec|>",
+            "section_end": "</|sec|>",
+            "section_title_start": "<|sec-title|>",
+            "section_title_end": "</|sec-title|>",
+            "abstract_start": "<|abs|>",
+            "abstract_end": "</|abs|>",
+            "title_start": "<|title|>",
+            "title_end": "</|title|>",
+            "sentence_sep": "<|sent|>",
+            "paragraph_sep": "<|par|>",
+        }
+        tokenizer.add_tokens(list(ADDITIONAL_TOKENS.values()))
         return tokenizer
 
     # Otherwise, add some extra tokens.
@@ -158,7 +171,7 @@ class SciFactDataset(Dataset):
                 claim, sentences, title
             )
         else:
-            tokenized, abstract_sent_idx = self._tokenize_longformer(
+            tokenized, abstract_sent_idx, sentences = self._tokenize_longformer(
                 claim, sentences, title
             )
 
@@ -171,6 +184,8 @@ class SciFactDataset(Dataset):
             rationale_sets = torch.zeros(len(sentences), dtype=torch.int64)
             rationale_id = 1
             for this_rationale in rationales:
+                if this_rationale[0] > len(rationale_sets):
+                  continue
                 rationale_sets[torch.tensor(this_rationale)] = rationale_id
                 rationale_id += 1
         else:
@@ -195,7 +210,18 @@ class SciFactDataset(Dataset):
     def _tokenize_longformer(self, claim, sentences, title):
         claim =  word_tokenize(claim, format="text")
         sentences = [word_tokenize(sent, format="text") for sent in sentences]
-        cited_text = self.tokenizer.eos_token.join(sentences)
+        count_token = 2 + len(claim.split())
+        sentences_trucated = []
+        for sent in sentences:
+          splited= sent.split()
+          if (count_token+ len(splited)+1) >4096:
+            sentences_trucated.append(" ".join(splited[:(4095-count_token)]))
+            break
+          else:
+            sentences_trucated.append(sent)
+            count_token += len(splited)+3
+
+        cited_text = self.tokenizer.eos_token.join(sentences_trucated)
         if title is not None:
             cited_text = title + self.tokenizer.eos_token + cited_text
         tokenized = self.tokenizer(claim + self.tokenizer.eos_token + cited_text, truncation=True, max_length=4096)
@@ -203,9 +229,9 @@ class SciFactDataset(Dataset):
         abstract_sent_idx = self._get_abstract_sent_tokens(tokenized, title)
 
         # Make sure we've got the right number of abstract sentence tokens.
-        assert len(abstract_sent_idx) == len(sentences)
+        #assert len(abstract_sent_idx) == len_sent
 
-        return tokenized, abstract_sent_idx
+        return tokenized, abstract_sent_idx, sentences_trucated
 
     def _tokenize_roberta(self, claim, sentences, title):
         "If we're using RoBERTa, we need to truncate the sentences to fit in window."

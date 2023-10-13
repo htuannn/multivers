@@ -13,8 +13,8 @@ def find_index_evidence(sentences, evidence):
     token = [x.strip() for x in sentences.split('.')]
     sentences = [sentence.replace('$$', '...') for sentence in token]
 
-    evidence  = re.sub(r'(\d)\.(\d)', r'\1\2', evidence)
     if evidence != None:
+        evidence  = re.sub(r'(\d)\.(\d)', r'\1\2', evidence)
         evidence_end = evidence[-1]
         for tk in token:
             if evidence_end == '.':

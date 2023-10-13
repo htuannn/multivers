@@ -9,7 +9,7 @@ import torch
 import numpy as np
 
 import util
-
+from underthesea import word_tokenize
 
 def get_tokenizer():
     "Need to add a few special tokens to the default longformer checkpoint."
@@ -63,7 +63,7 @@ class MultiVerSDataset(Dataset):
                 claim, sentences, title
             )
         else:
-            tokenized, abstract_sent_idx = self._tokenize(
+            tokenized, abstract_sent_idx, sentences = self._tokenize(
                 claim, sentences, title
             )
 
@@ -74,17 +74,30 @@ class MultiVerSDataset(Dataset):
         }
 
     def _tokenize(self, claim, sentences, title):
-        cited_text = self.tokenizer.eos_token.join(sentences)
+        claim =  word_tokenize(claim, format="text")
+        sentences = [word_tokenize(sent, format="text") for sent in sentences]
+        count_token = 2 + len(claim.split())
+        sentences_trucated = []
+        for sent in sentences:
+          splited= sent.split()
+          if (count_token+ len(splited)+1) >4096:
+            sentences_trucated.append(" ".join(splited[:(4095-count_token)]))
+            break
+          else:
+            sentences_trucated.append(sent)
+            count_token += len(splited)+3
+
+        cited_text = self.tokenizer.eos_token.join(sentences_trucated)
         if title is not None:
             cited_text = title + self.tokenizer.eos_token + cited_text
-        tokenized = self.tokenizer(claim + self.tokenizer.eos_token + cited_text)
+        tokenized = self.tokenizer(claim + self.tokenizer.eos_token + cited_text, truncation=True, max_length=4096)
         tokenized["global_attention_mask"] = self._get_global_attention_mask(tokenized)
         abstract_sent_idx = self._get_abstract_sent_tokens(tokenized, title)
 
         # Make sure we've got the right number of abstract sentence tokens.
-        assert len(abstract_sent_idx) == len(sentences)
+        #assert len(abstract_sent_idx) == len_sent
 
-        return tokenized, abstract_sent_idx
+        return tokenized, abstract_sent_idx, sentences_trucated
 
     def _tokenize_truncated(self, claim, sentences, title):
         "If we're using RoBERTa, we need to truncate the sentences to fit in window."

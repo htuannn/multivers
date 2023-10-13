@@ -71,7 +71,7 @@ def main():
         "--accumulate_grad_batches",
         accumulate_grad_batches,
         "--lr",
-        "9e-5",
+        "1e-5",
         "--precision",
         16,
         "--max_epochs",
@@ -83,15 +83,13 @@ def main():
         "--eval_batch_size",
         2,
         "--val_check_interval",
-        "0.1",
+        "0.3",
         "--encoder_name",
         "bluenguyen/longformer-phobert-base-4096",
         "--max_label_weight",
         5,
         "--monitor",
         "valid_abstract_rationalized_f1",
-        "--weights_save_path",
-        "/content/drive/MyDrive/AI/multivers"
     ]
 
     # If training on more than 1 gpu, use DDP accelerator.

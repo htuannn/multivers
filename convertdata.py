@@ -1,5 +1,6 @@
 import json
 import random
+import re
 #load jsonl file
 from sklearn.model_selection import train_test_split
 
@@ -7,6 +8,7 @@ import pandas as pd
 
 def find_index_evidence(sentences, evidence):
     sentences = sentences.replace('...', '$$').strip()
+    sentences = re.sub(r'(\d)\.(\d)', r'\1,\2', sentences)
     token = [x.strip() for x in sentences.split('.')]
     sentences = [sentence.replace('$$', '...') for sentence in token]
     if evidence != None:

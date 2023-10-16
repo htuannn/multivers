@@ -11,7 +11,7 @@ def find_index_evidence(sentences, evidence):
     
     sentences = re.sub(r'([\d\w])\.([\d\w])', r'\1\[dot\]\2', sentences)
     token = [x.strip() for x in sentences.split('.')]
-    sentences = [sentences.replace("\[dot\]", ".").replace('$$', '...') for sentence in token]
+    sentences = [sentence.replace("\[dot\]", ".").replace('$$', '...') for sentence in token]
 
     if evidence != None:
         evidence_end = evidence[-1]
@@ -39,7 +39,7 @@ def convertfile(data, output):
             sentences = v['context'].replace('...', '$$').strip()
             sentences = re.sub(r'([\d\w])\.([\d\w])', r'\1\[dot\]\2', sentences)
             token = [x.strip() for x in sentences.split('.')]
-            sentences = [sentences.replace("\[dot\]", ".").replace('$$', '...') for sentence in token]
+            sentences = [sentence.replace("\[dot\]", ".").replace('$$', '...') for sentence in token]
 
             evidence_sets = [find_index_evidence(v['context'], v['evidence'])]
             

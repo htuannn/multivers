@@ -9,9 +9,9 @@ import pandas as pd
 def find_index_evidence(sentences, evidence):
     sentences = sentences.replace('...', '$$').strip()
     
-    sentences = re.sub(r'[\d\w].[\d\w]', r'\1\[dot\]\2', sentences)
+    sentences = re.sub(r'([\d\w])\.([\d\w])', r'\1\[dot\]\2', sentences)
     token = [x.strip() for x in sentences.split('.')]
-    sentences = [re.sub(r'[\d\w]\[dot\][\d\w]', r'\1.\2', sentences).replace('$$', '...') for sentence in token]
+    sentences = [sentences.replace("\[dot\]", ".").replace('$$', '...') for sentence in token]
 
     if evidence != None:
         evidence_end = evidence[-1]
@@ -37,9 +37,9 @@ def convertfile(data, output):
             label = label_lookup[v['verdict']]
 
             sentences = v['context'].replace('...', '$$').strip()
-            sentences = re.sub(r'[\d\w].[\d\w]', r'\1\[dot\]\2', sentences)
+            sentences = re.sub(r'([\d\w])\.([\d\w])', r'\1\[dot\]\2', sentences)
             token = [x.strip() for x in sentences.split('.')]
-            sentences = [re.sub(r'[\d\w]\[dot\][\d\w]', r'\1.\2', sentences).replace('$$', '...') for sentence in token]
+            sentences = [sentences.replace("\[dot\]", ".").replace('$$', '...') for sentence in token]
 
             evidence_sets = [find_index_evidence(v['context'], v['evidence'])]
             

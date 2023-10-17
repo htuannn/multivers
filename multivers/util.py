@@ -75,7 +75,7 @@ def get_longformer_phobert_checkpoint():
     checkpoint_model = loaded_model.state_dict()
     return checkpoint_model
     
-'''def get_longformer_science_checkpoint():
+def get_longformer_science_checkpoint():
     current_dir = pathlib.Path(os.path.realpath(__file__)).parent
     fname = current_dir.parent / "checkpoints/longformer_large_science.ckpt"
 
@@ -126,4 +126,4 @@ def flatten(z):
 
 
 def list_to_dict(xs, keyname):
-    return {x[keyname]: x for x in xs} '''
+    return {x[keyname]: x for x in xs}

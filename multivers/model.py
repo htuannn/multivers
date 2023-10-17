@@ -356,15 +356,16 @@ class MultiVerSModel(pl.LightningModule):
         the output of the forward pass.
         """
         # Mapping from ints to labels.
-        label_lookup = {0: "CONTRADICT",
+        label_lookup = {0: "REFUTED",
                         1: "NEI",
-                        2: "SUPPORT"}
+                        2: "SUPPORTED"}
 
         # Get predicted rationales, only keeping eligible sentences.
         instances = util.unbatch(batch, ignore=["tokenized"])
         output_unbatched = util.unbatch(output)
 
         predictions = []
+        formated_predictions=[]
         for this_instance, this_output in zip(instances, output_unbatched):
             predicted_label = label_lookup[this_output["predicted_labels"]]
 
@@ -379,6 +380,8 @@ class MultiVerSModel(pl.LightningModule):
             # take the highest-scoring sentence as a rationale.
             if predicted_label != "NEI" and not predicted_rationale and force_rationale:
                 candidates = this_output["rationale_probs"][rationale_ix]
+                print(rationale_ix)
+                print(candidates)
                 predicted_rationale = [candidates.argmax()]
 
             res = {
@@ -389,6 +392,14 @@ class MultiVerSModel(pl.LightningModule):
                 "label_probs": this_output["label_probs"],
                 "rationale_probs": this_output["rationale_probs"][rationale_ix]
             }
+            formated = {str(this_instance["claim_id"]):{
+              "verdict": predicted_label,
+              "evidence": predicted_rationale,}
+            }
+
+            
             predictions.append(res)
 
-        return predictions
+            formated_predictions.append(formated)
+
+        return predictions, formated_predictions

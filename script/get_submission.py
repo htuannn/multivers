@@ -93,7 +93,7 @@ def get_predictions(args):
     collator = Collator(tokenizer)
     test_dataloader = DataLoader(test_data,\
                           num_workers=4,\
-                          batch_size=16,\
+                          batch_size=args.batch_size,\
                           collate_fn=collator,\
                           shuffle=False,\
                           pin_memory=True)

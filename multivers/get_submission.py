@@ -9,6 +9,7 @@ from torch.utils.data import Dataset
 from model import MultiVerSModel
 from data import get_dataloader, MultiVerSDataset,  Collator
 from data_train import get_tokenizer
+from split_long_doc import split_long_doc
 import util
 import torch
 import json
@@ -72,21 +73,37 @@ def get_predictions(args):
         claim = v['claim']
         claim = re.sub(r'(\d)\.(\d)', r'\1\2', claim)
 
-        sentences = v['context'].replace('...', '$$').strip()
-        sentences = re.sub(r'(\d)\.(\d)', r'\1\2', sentences)
-        token = [x.strip() for x in sentences.split('.')]
-        sentences = [sentence.replace('$$', '...')+" ." for sentence in token]
-        sent_mapping[id]= sentences
-        claim_id = id
-        abstract_id = -1
-        to_tensorize = {"claim": claim,
-                        "sentences": sentences,
-                        "title": None}
-        data_dict = {
-            'claim_id': int(id),
-            'to_tensorize': to_tensorize,
-            'abstract_id': abstract_id}
-        res.append(data_dict)
+        contexts = v['context']
+        if (len(contexts) > 8_000):
+            contexts = split_long_doc(doc=contexts)
+        else:
+            # If context is not split, turn it into a list with a single element (for consistency)
+            contexts = [contexts]
+
+        for context in contexts:
+            sentences = context.replace('...', '$$').strip()
+            sentences = re.sub(r'(\d)\.(\d)', r'\1\2', sentences)
+            token = [x.strip() for x in sentences.split('.')]
+            sentences = [sentence.replace('$$', '...')+" ." for sentence in token]
+            if id in sent_mapping:
+                # If item already in the list, add more sentences to it
+                sent_mapping[id] = sent_mapping[id] + sentences
+            else:
+                # If not, create a new item
+                sent_mapping[id] = sentences
+            claim_id = id
+            abstract_id = -1
+            to_tensorize = {
+                "claim": claim,
+                "sentences": sentences,
+                "title": None
+            }
+            data_dict = {
+                'claim_id': int(id),
+                'to_tensorize': to_tensorize,
+                'abstract_id': abstract_id
+            }
+            res.append(data_dict)
 
     tokenizer = get_tokenizer(args)
     test_data= MultiVerSDataset(res, tokenizer)
@@ -100,13 +117,69 @@ def get_predictions(args):
 
     # Make predictions.
     predictions_all = []
+    predictions_all_probs = []
 
     for batch in tqdm(test_dataloader):
-        _ ,  preds_batch= model.predict(batch, args.force_rationale)
+        preds_prob,  preds_batch= model.predict(batch, force_rationale=True)
+        predictions_all_probs.extend(preds_prob)
         predictions_all.extend(preds_batch)
 
+    final_predictions = []
+    pred_idx = 0
+    while pred_idx < len(predictions_all_probs):
+        pred_idx_change = 1 # This is 1 if no split, 2 if split
+
+        pred = predictions_all_probs[pred_idx]
+        chosen_pred = pred.copy() # Which prediction assigned to this variable will be added into final predictions list
+        chosen_is_second = False # Check whether we use the second prediction or not
+
+        if (pred_idx + 1) < len(predictions_all_probs):
+            pred_next = predictions_all_probs[pred_idx + 1].copy()
+
+            if pred['claim_id'] == pred_next['claim_id']:
+
+                if pred['predicted_label'] == 'NEI':
+                    chosen_pred = pred_next.copy()
+                    chosen_is_second = True
+
+                elif pred_next['predicted_label'] == 'NEI':
+                    chosen_pred = pred.copy()
+
+                else:
+                    pred_probs = max(pred['label_probs']) * pred['rationale_probs'][pred['predicted_rationale'][0]]
+                    pred_probs_next = max(pred_next['label_probs']) * pred_next['rationale_probs'][pred_next['predicted_rationale'][0]]
+
+
+                    if (pred_probs_next > pred_probs):
+                        chosen_pred = pred_next.copy()
+                        chosen_is_second = True
+
+                # Skip next prediction since it is used.
+                pred_idx_change += 1
+
+        if chosen_is_second:
+            # If we use the second prediction as our final prediction,
+            # We have to fix index of its sentences (it should be stared
+            # from length of the first half of the doc).
+            # len(pred['rationale_probs']) is the length of the first half of the doc.
+            chosen_pred['predicted_rationale'] = [rationale + len(pred['rationale_probs']) for rationale in chosen_pred['predicted_rationale']]
+        
+        # Now we change the format of our predictions to be like it was in "predictions_all"
+        chosen_pred = {
+            str(chosen_pred['claim_id']): {
+                'verdict': chosen_pred['predicted_label'],
+                'evidence': chosen_pred['predicted_rationale']
+            }
+        }
+
+        # Save our prediction
+        final_predictions.append(chosen_pred)
+
+        # To next prediction
+        pred_idx += pred_idx_change
+
     output={}
-    for pred in predictions_all: 
+    for pred in final_predictions: 
         print(pred.items())
         for k, v in pred.items():
           if v["verdict"] == "NEI":
